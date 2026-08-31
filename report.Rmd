@@ -1,0 +1,831 @@
+---
+title: "Small Area Estimation - UFH, MFH & Comparison Report"
+author: "EU SAE Pipeline"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+params:
+  include_ai: false
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: cosmo
+    self_contained: true
+    fig_width: 10
+    fig_height: 6
+    md_extensions: "-smart"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  out.width = "100%"
+)
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(readxl)
+  library(knitr)
+  library(patchwork)
+  library(sf)
+  library(scales)
+  library(here)
+})
+
+# Keep report inputs and outputs inside the running package copy when the
+# package is nested within a different Git checkout.
+here::i_am("report.Rmd")
+
+fig_dir   <- here::here("outputs", "figures")
+data_dir  <- here::here("outputs", "data")
+table_dir <- here::here("outputs", "tables")
+
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0) y else x
+}
+
+source(here::here("R", "comparison_report_ai.R"), local = knitr::knit_global())
+
+include_fig <- function(filename, ...) {
+  path <- file.path(fig_dir, filename)
+  if (file.exists(path)) {
+    knitr::include_graphics(path)
+  } else {
+    cat(sprintf("*Figure not available: %s*\n", filename))
+  }
+}
+
+safe_read_csv <- function(filename, dir = table_dir) {
+  path <- file.path(dir, filename)
+  if (file.exists(path)) read.csv(path) else NULL
+}
+```
+
+# Executive Summary
+
+```{r load-comparison}
+pov_fh  <- tryCatch(read_excel(file.path(data_dir, "pov_fh.xlsx")),
+                     error = function(e) NULL)
+pov_mfh <- tryCatch(read_excel(file.path(data_dir, "pov_mfh.xlsx")),
+                     error = function(e) NULL)
+pov_cmp <- tryCatch(read_excel(file.path(data_dir, "pov_comparison_detailed.xlsx")),
+                     error = function(e) NULL)
+mfh_artifacts <- tryCatch(readRDS(file.path(data_dir, "mfh_artifacts.rds")),
+                          error = function(e) NULL)
+run_meta <- tryCatch(readRDS(file.path(data_dir, "run_metadata.rds")),
+                     error = function(e) NULL)
+ai_state <- tryCatch(readRDS(file.path(data_dir, "ai_interpretations.rds")),
+                     error = function(e) NULL)
+
+sig_summary <- safe_read_csv("significance_summary.csv",
+                              file.path(fig_dir, "tables"))
+exec_summary <- safe_read_csv("executive_summary.csv",
+                               file.path(fig_dir, "tables"))
+
+model_fit_diag <- safe_read_csv("model_fit_diagnostics.csv",
+                                file.path(fig_dir, "tables"))
+if (is.null(model_fit_diag)) {
+  fit_parts <- list(
+    safe_read_csv("ufh_model_diagnostics.csv"),
+    safe_read_csv("mfh_model_diagnostics.csv")
+  )
+  fit_parts <- fit_parts[!vapply(fit_parts, is.null, logical(1))]
+  model_fit_diag <- if (length(fit_parts) > 0) bind_rows(fit_parts) else NULL
+}
+
+selection_parts <- list(
+  safe_read_csv("ufh_selection_diagnostics.csv"),
+  safe_read_csv("mfh_selection_diagnostics.csv")
+)
+selection_parts <- selection_parts[!vapply(selection_parts, is.null, logical(1))]
+selection_diag <- if (length(selection_parts) > 0) bind_rows(selection_parts) else NULL
+mfh_numerical_diag <- safe_read_csv("mfh_numerical_diagnostics.csv")
+mfh_variance_selection <- safe_read_csv("mfh_variance_structure_selection.csv")
+mfh_mcpe_validation <- safe_read_csv("mfh_mcpe_validation.csv")
+```
+
+```{r ai-report-styles, results='asis'}
+cat(comparison_ai_styles_html())
+cat(paste0(
+  '<style>',
+  '.full-significance-table{max-height:760px;overflow:auto;border:1px solid #d9e2ec;',
+  'margin:16px 0 22px 0;background:#fff;}',
+  '.full-significance-table table{min-width:1180px;margin-bottom:0;font-size:.92em;}',
+  '.full-significance-table thead th{position:sticky;top:0;background:#fff;z-index:2;',
+  'border-bottom:2px solid #cbd5e1;}',
+  '.excel-output-links{background:#f7fafc;border-left:5px solid #486581;',
+  'padding:12px 16px;margin:18px 0;}',
+  '</style>'
+))
+```
+
+```{r exec-summary-table}
+if (!is.null(exec_summary)) {
+  kable(exec_summary, digits = 4,
+        caption = "Mean estimates and mean MSEs by year")
+}
+```
+
+```{r sig-summary-table}
+if (!is.null(sig_summary)) {
+  kable(sig_summary, digits = 0,
+        caption = "Number of domains with statistically significant changes")
+}
+```
+
+# Run Setup
+
+```{r run-setup}
+if (!is.null(run_meta)) {
+  bm <- run_meta$benchmarking %||% list()
+  ai_meta <- run_meta$ai_interpretations %||% list()
+  generated_sections <- ai_meta$generated_sections %||% character()
+  generated_sections_label <- if (length(generated_sections)) {
+    paste(generated_sections, collapse = ", ")
+  } else {
+    "none"
+  }
+  numeric_qa <- ai_meta$numeric_qa_status %||% character()
+  numeric_qa_label <- if (length(numeric_qa)) {
+    paste(sprintf("%s=%s", names(numeric_qa), numeric_qa), collapse = ", ")
+  } else {
+    "not performed"
+  }
+  mfh_variance_rule <- run_meta$mfh_variance_structure_selection %||% list()
+  mfh_refvar_label <- if (isTRUE(mfh_variance_rule$test_available)) {
+    paste0(mfh_variance_rule$adjustment %||% "not recorded", " (applied)")
+  } else {
+    paste0(
+      "not applied",
+      if (nzchar(mfh_variance_rule$reason %||% "")) {
+        paste0(" - ", mfh_variance_rule$reason)
+      } else {
+        ""
+      }
+    )
+  }
+  setup_tbl <- data.frame(
+    Item = c(
+      "Application version",
+      "Country or territory",
+      "Run ID",
+      "Run label",
+      "Run folder",
+      "Archived outputs",
+      "Benchmarking",
+      "Benchmark level",
+      "Benchmark source",
+      "Benchmark target file",
+      "Requested MFH rule",
+      "Selected MFH model",
+      "MFH3 reference-variance test adjustment",
+      "Analysis seed",
+      "MCPE bootstrap replicates",
+      "UFH change variance assumption",
+      "Poverty-change inference",
+      "External AI enabled",
+      "AI interpretations included",
+      "AI provider and model",
+      "AI sections generated",
+      "AI numeric QA (warning-only)",
+      "AI human-review status"
+    ),
+    Value = c(
+      run_meta$application_version %||% "",
+      run_meta$country_or_territory %||% "Not specified",
+      run_meta$run_id %||% "",
+      run_meta$run_label %||% "",
+      run_meta$run_folder %||% "",
+      run_meta$archived_outputs %||% "",
+      if (isTRUE(bm$enabled)) "enabled" else "off",
+      bm$level_label %||% bm$level %||% "",
+      bm$source %||% "",
+      bm$target_path %||% "",
+      run_meta$mfh_requested_model %||% "",
+      run_meta$mfh_selected_model %||% "",
+      mfh_refvar_label,
+      run_meta$analysis_seed %||% "",
+      run_meta$mcpe_bootstrap_replicates %||% "",
+      run_meta$ufh_change_variance_assumption %||% "",
+      "pointwise primary; BH and Bonferroni sensitivities reported",
+      if (isTRUE(run_meta$ai$enabled)) "yes (advisory commentary only)" else "no",
+      if (isTRUE(params$include_ai)) "yes, where successfully generated" else "no",
+      paste(
+        ai_meta$provider %||% run_meta$ai$provider %||% "not recorded",
+        ai_meta$model %||% "model not recorded",
+        sep = " / "
+      ),
+      generated_sections_label,
+      numeric_qa_label,
+      ai_meta$human_review_status %||% "not reviewed"
+    ),
+    check.names = FALSE
+  )
+  kable(setup_tbl, caption = "Run configuration and output locations")
+}
+```
+
+# Comparison of UFH and MFH
+
+This section compares the univariate (UFH) and multivariate (MFH) Fay-Herriot pipelines side by side, examining regression formulas, normality diagnostics, precision metrics, poverty maps, RMSE maps, and change analyses.
+
+```{r ai-overview, results='asis'}
+cat(comparison_ai_assurance_html(ai_state, include_ai = isTRUE(params$include_ai)))
+cat(comparison_ai_section_html(ai_state, "overview",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+```{r mfh-availability, results='asis'}
+mfh_status <- if (!is.null(mfh_artifacts)) {
+  list(
+    fit_failed  = isTRUE(mfh_artifacts$model_fit_failed),
+    refvar_zero = isTRUE(mfh_artifacts$refvar_zero),
+    var_choice  = mfh_artifacts$var_choice %||% "(unset)",
+    cov_choice  = mfh_artifacts$cov_choice %||% "(unset)",
+    requested_model = mfh_artifacts$diag_model_requested %||% "(unset)",
+    diag_model  = mfh_artifacts$diag_model %||% "(unset)",
+    selection_reason = (mfh_artifacts$variance_structure_selection %||% list())$reason %||% "not recorded",
+    bad_rows    = mfh_artifacts$bad_vardir_rows %||% 0L,
+    n_domains   = mfh_artifacts$n_domains %||% NA_integer_,
+    n_fitted    = mfh_artifacts$n_domains_fitted %||% mfh_artifacts$n_domains %||% NA_integer_
+  )
+} else {
+  NULL
+}
+
+mfh_not_executed <- !is.null(mfh_status) &&
+  (mfh_status$fit_failed || mfh_status$refvar_zero)
+
+mfh_change <- safe_read_csv("comparison_final.csv")
+mfh_change_available <- !is.null(mfh_change) &&
+  "diff" %in% names(mfh_change) &&
+  any(is.finite(suppressWarnings(as.numeric(mfh_change$diff))))
+
+if (!is.null(mfh_status) && mfh_status$bad_rows > 0 && !mfh_not_executed) {
+  cat(sprintf(
+    paste0(
+      "<div class=\"alert alert-info\">",
+      "<strong>Note:</strong> %s of %s domains had missing/non-finite sampling variances ",
+      "and were excluded from MFH fitting. Their MFH estimates are reported as NA. ",
+      "The MFH model was fitted on the remaining %s domains.",
+      "</div>\n"
+    ),
+    mfh_status$bad_rows,
+    mfh_status$n_domains,
+    mfh_status$n_fitted
+  ))
+}
+
+if (!is.null(mfh_status) && !mfh_not_executed) {
+  cat(sprintf(
+    paste0(
+      "<div class=\"alert alert-info\">",
+      "<strong>Selected MFH variant:</strong> %s (requested rule: %s). ",
+      "Selection reason: %s ",
+      "The displayed MFH comparison tables and plots use the selected model export ",
+      "from <code>pov_mfh.xlsx</code>. Other MFH variants may be fitted internally ",
+      "for diagnostics/model selection, but they are not exposed in the user-facing ",
+      "MFH estimate export.",
+      "</div>\n"
+    ),
+    mfh_status$diag_model,
+    mfh_status$requested_model,
+    mfh_status$selection_reason
+  ))
+}
+
+if (mfh_not_executed) {
+  if (mfh_status$fit_failed) {
+    reason <- "The selected MFH model did not return a valid fit object."
+  } else {
+    reason <- "The selected MFH model estimated the random-effects variance at zero, so no domain-specific shrinkage was produced."
+  }
+
+  cat(sprintf(
+    paste0(
+      "<div class=\"alert alert-warning\">",
+      "<strong>MFH was not executed for this configuration.</strong><br>",
+      "%s<br>",
+      "Selected options: <code>var_choice = %s</code>, <code>cov_choice = %s</code>, ",
+      "<code>diagnostic model = %s</code>.<br>",
+      "MFH maps, UFH-vs-MFH comparisons, and MFH change analyses are omitted or NA-filled.",
+      "</div>\n"
+    ),
+    reason,
+    mfh_status$var_choice,
+    mfh_status$cov_choice,
+    mfh_status$diag_model
+  ))
+} else if (!is.null(mfh_status) && !mfh_change_available) {
+  cat(
+    paste0(
+      "<div class=\"alert alert-info\">",
+      "<strong>MFH fitted, but MFH change analysis is not available.</strong><br>",
+      "The level estimates are available, but the MCPE-based change analysis did not produce finite differences. ",
+      "This can happen with raw direct variances in the parametric bootstrap.",
+      "</div>\n"
+    )
+  )
+}
+```
+
+## MFH Variance-Structure Selection
+
+The default procedure fits MFH3 first. If MFH3 does not converge or cannot be fitted, the reason is recorded and MFH2 is used. If MFH3 converges, its reference-variance tests compare the time-specific random-effect variances. MFH3 is retained when at least one adjusted test rejects equality at the configured level; otherwise MFH2 is selected. Bonferroni is the confirmatory default, while Benjamini-Hochberg (BH) is available as a less-conservative sensitivity option. These adjustments apply across pairwise **time-variance contrasts**, not across geographic areas. With two analysis years there is only one contrast, so raw, Bonferroni, and BH p-values are identical.
+
+```{r mfh-variance-selection-table}
+if (!is.null(mfh_variance_selection)) {
+  kable(mfh_variance_selection, digits = 4,
+        caption = "MFH3 convergence and reference-variance model-selection decision")
+}
+```
+
+## MCPE Bootstrap Assurance
+
+The table below reports run-specific computational diagnostics for the parametric-bootstrap MCPE calculation, including successful refits, failures, covariance repairs, and Monte Carlo standard errors. These diagnostics assess numerical execution and simulation precision; they do not, by themselves, constitute an independent validation of statistical bias or interval coverage.
+
+```{r mfh-mcpe-validation-table}
+if (!is.null(mfh_mcpe_validation)) {
+  kable(mfh_mcpe_validation, digits = 5,
+        caption = "MCPE bootstrap execution and Monte Carlo precision diagnostics")
+}
+```
+
+## Regression Models
+
+```{r formula-table}
+formulas <- safe_read_csv("model_formulas.csv",
+                           file.path(fig_dir, "tables"))
+if (!is.null(formulas)) {
+  kable(formulas,
+        caption = "Selected regression formulas used in the FH and MFH pipelines")
+}
+```
+
+## Model Fit Diagnostics
+
+The R2 and adjusted R2 values below are OLS companion diagnostics for the selected formulas. They are useful for model screening and communication, but they are not a definitive mixed-model fit measure.
+
+```{r model-fit-diagnostics}
+if (!is.null(model_fit_diag) && nrow(model_fit_diag) > 0) {
+  fit_display <- model_fit_diag %>%
+    transmute(
+      Method = method,
+      Year = year,
+      Formula = formula,
+      `Domains used` = n_domains,
+      `Predictors` = n_predictors,
+      AIC = round(as.numeric(AIC), 4),
+      BIC = round(as.numeric(BIC), 4),
+      logLik = round(as.numeric(logLik), 4),
+      Sigma = round(as.numeric(residual_sd), 4),
+      `Random-effect variance` = round(as.numeric(random_effect_variance), 6),
+      `OLS companion R2` = round(as.numeric(ols_companion_r2), 4),
+      `OLS companion adjusted R2` = round(as.numeric(ols_companion_adj_r2), 4)
+    )
+  kable(fit_display,
+        caption = "Model fit diagnostics for selected UFH and MFH formulas")
+} else {
+  cat("*Model fit diagnostics were not exported for this run.*\n")
+}
+```
+
+## MFH Numerical Diagnostics
+
+The table below records the inversion method and condition-number diagnostic
+for the robust MFH2 fit. Successful Cholesky paths report a low-cost estimate
+derived from the Cholesky factor; fallback paths report an exact value when it
+can be computed. A generalized inverse or an unavailable Fisher-information
+inverse requires review. When `g3_available` is false, the package reports MSE
+and CV as unavailable rather than substituting a partial MSE.
+
+```{r mfh-numerical-diagnostics, results='asis'}
+if (!is.null(mfh_numerical_diag) && nrow(mfh_numerical_diag) > 0) {
+  print(kable(mfh_numerical_diag,
+              digits = 4,
+              caption = "MFH numerical diagnostics and g3/MSE availability"))
+  needs_attention <- any(
+    mfh_numerical_diag$diagnostic_status %in%
+      c("generalized_inverse_used", "unavailable", "robust_refit_failed",
+        "robust_refit_no_extended_diagnostics", "model_fit_failed",
+        "model_fit_skipped") |
+      mfh_numerical_diag$mse_status == "unavailable_fisher_information",
+    na.rm = TRUE
+  )
+  if (needs_attention) {
+    cat("\n> **Review required:** MFH numerical diagnostics indicate a generalized inverse, an unavailable inverse, a failed/skipped fit, or unavailable g3/MSE.\n")
+  }
+} else {
+  cat("*MFH numerical diagnostics were not exported for this run.*\n")
+}
+```
+
+## Covariate Selection Diagnostics
+
+This table records whether LASSO screening was used before stepwise selection. When LASSO is off, the stepwise procedure receives the original candidate set.
+
+```{r selection-diagnostics}
+if (!is.null(selection_diag) && nrow(selection_diag) > 0) {
+  selection_display <- selection_diag %>%
+    mutate(
+      lasso_enabled = as.character(lasso_enabled),
+      lambda_choice = as.character(lambda_choice),
+      fallback_used = as.character(fallback_used)
+    ) %>%
+    transmute(
+      Model = model,
+      Outcome = outcome,
+      `LASSO screening` = ifelse(tolower(lasso_enabled) %in% c("true", "yes", "1"),
+                                 "on", "off"),
+      `Lambda choice` = lambda_choice,
+      `Candidate variables` = n_candidates,
+      `Numeric candidates` = n_numeric_candidates,
+      `Complete cases for LASSO` = n_complete_cases,
+      `LASSO-selected variables` = n_selected,
+      `Fallback used` = fallback_used,
+      Note = note
+    )
+  kable(selection_display,
+        caption = "Covariate screening diagnostics before stepwise model selection")
+} else {
+  cat("*Covariate selection diagnostics were not exported for this run.*\n")
+}
+```
+
+```{r coef-fh}
+fh_coefs <- safe_read_csv("fh_coefficients.csv",
+                           file.path(fig_dir, "tables"))
+if (!is.null(fh_coefs)) {
+  kable(fh_coefs, digits = c(0, 0, 0, 6, 6, 3, 4, 0),
+        caption = "Estimated FH regression coefficients by year")
+}
+```
+
+```{r coef-mfh}
+mfh_coefs <- safe_read_csv("mfh_coefficients.csv",
+                            file.path(fig_dir, "tables"))
+if (!is.null(mfh_coefs)) {
+  kable(mfh_coefs, digits = c(0, 0, 0, 6, 6, 3, 4, 0),
+        caption = "Estimated MFH regression coefficients by year")
+}
+```
+
+## Normality Diagnostics
+
+```{r normality-tests}
+normality <- safe_read_csv("normality_tests.csv",
+                            file.path(fig_dir, "tables"))
+if (!is.null(normality)) {
+  kable(normality, digits = 4,
+        caption = "Shapiro-Wilk normality tests for FH and MFH diagnostics")
+}
+```
+
+### Q-Q Plots
+
+```{r qq-plots, results='asis'}
+qq_files <- list.files(file.path(fig_dir, "diagnostics"),
+                       pattern = "^qq_.*\\.png$", full.names = FALSE)
+if (length(qq_files) > 0) {
+  for (f in sort(qq_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n#### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "diagnostics", f)))
+  }
+} else {
+  cat("*No Q-Q plots available.*\n")
+}
+```
+
+### Density Plots
+
+```{r density-plots, results='asis'}
+density_files <- list.files(file.path(fig_dir, "diagnostics"),
+                            pattern = "^density_.*\\.png$", full.names = FALSE)
+if (length(density_files) > 0) {
+  for (f in sort(density_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n#### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "diagnostics", f)))
+  }
+} else {
+  cat("*No density plots available.*\n")
+}
+```
+
+```{r ai-normality, results='asis'}
+cat(comparison_ai_section_html(ai_state, "normality",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+## Rate, MSE, RMSE, and CV Comparisons
+
+```{r metric-comparisons, results='asis'}
+mc_files <- list.files(file.path(fig_dir, "metric_comparisons"),
+                       pattern = "\\.png$", full.names = FALSE)
+if (length(mc_files) > 0) {
+  for (f in sort(mc_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "metric_comparisons", f)))
+  }
+} else {
+  cat("*No metric comparison plots available.*\n")
+}
+```
+
+```{r ai-rates-precision, results='asis'}
+cat(comparison_ai_section_html(ai_state, "rates",
+                               include_ai = isTRUE(params$include_ai)))
+cat(comparison_ai_section_html(ai_state, "precision",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+## Poverty Maps
+
+```{r poverty-maps, results='asis'}
+map_files <- list.files(file.path(fig_dir, "poverty_maps"),
+                        pattern = "\\.png$", full.names = FALSE)
+if (length(map_files) > 0) {
+  for (f in sort(map_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "poverty_maps", f)))
+  }
+} else {
+  cat("*No poverty maps available.*\n")
+}
+```
+
+```{r ai-poverty-maps, results='asis'}
+cat(comparison_ai_section_html(ai_state, "poverty_maps",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+## RMSE Maps
+
+Maps of the root mean squared error (RMSE) of the poverty estimates, showing
+how estimation precision varies across domains. Darker areas indicate higher
+RMSE (lower precision).
+
+```{r rmse-maps, results='asis'}
+rmse_map_files <- list.files(file.path(fig_dir, "rmse_maps"),
+                             pattern = "\\.png$", full.names = FALSE)
+if (length(rmse_map_files) > 0) {
+  for (f in sort(rmse_map_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "rmse_maps", f)))
+  }
+} else {
+  cat("*No RMSE maps available.*\n")
+}
+```
+
+## Statistical Significance of Poverty Changes
+
+The primary significance status is pointwise at alpha = 0.05: a domain is
+classified as significant when its unadjusted two-sided p-value is below 0.05,
+equivalently when the plotted pointwise 95% confidence interval excludes zero.
+The table also reports Benjamini-Hochberg (BH) and Bonferroni adjustments across
+the geographic domains within each method. BH controls the false discovery rate;
+Bonferroni controls the family-wise probability of any false rejection. These
+are sensitivity results and do not control the figure colors or headline counts.
+They are separate from the MFH3 reference-variance test adjustment, which applies
+only to pairwise time-variance contrasts when MFH3 is fitted.
+
+```{r sig-comparison, results='asis'}
+sig_cmp <- tryCatch(
+  read_excel(file.path(data_dir, "statistical_significance_comparison.xlsx")),
+  error = function(e) NULL
+)
+if (!is.null(sig_cmp)) {
+  sig_cols <- c(
+    "domain", "method", "diff", "mse", "lb", "ub",
+    "p_value", "significant_unadjusted",
+    "p_value_bh", "significant_bh",
+    "p_value_bonferroni", "significant_bonferroni"
+  )
+  sig_display <- sig_cmp %>%
+    select(any_of(sig_cols)) %>%
+    mutate(
+      .method_order = match(
+        as.character(method),
+        c("FH", "FH Benchmarked", "MFH", "MFH Benchmarked")
+      ),
+      .domain_order = suppressWarnings(as.numeric(as.character(domain)))
+    ) %>%
+    arrange(.method_order, is.na(.domain_order), .domain_order, domain) %>%
+    select(-.method_order, -.domain_order)
+  sig_labels <- c(
+    domain = "Domain", method = "Method", diff = "Change", mse = "MSE",
+    lb = "95% CI lower", ub = "95% CI upper",
+    p_value = "Pointwise p-value",
+    significant_unadjusted = "Pointwise significant",
+    p_value_bh = "BH-adjusted p-value",
+    significant_bh = "BH significant",
+    p_value_bonferroni = "Bonferroni-adjusted p-value",
+    significant_bonferroni = "Bonferroni significant"
+  )
+  names(sig_display) <- unname(sig_labels[names(sig_display)])
+  cat('<div class="full-significance-table">')
+  cat(as.character(kable(
+    sig_display,
+    format = "html",
+    digits = 4,
+    escape = TRUE,
+    table.attr = 'class="table table-condensed"',
+    caption = sprintf(
+      "Complete statistical significance comparison (%d rows; pointwise status is primary)",
+      nrow(sig_display)
+    )
+  )))
+  cat('</div>')
+} else {
+  cat("*The statistical-significance workbook was not available for this run.*\n")
+}
+```
+
+### Distribution and paired comparison of estimated changes
+
+These two figures compare the **estimated changes themselves**, using the later
+year minus the earlier year. Poverty-rate changes are in **percentage points**;
+mean-welfare changes use the configured currency units. Negative values indicate
+a decrease. The same finite, matched domain pairs enter both plots. The boxplot
+shows the distribution across domains, not the uncertainty around each estimate.
+Below the scatterplot's equality line, the MFH estimate is lower than the UFH
+estimate; that does not establish greater accuracy or statistical significance.
+These comparisons use unbenchmarked estimates, as do the CI-width figures below.
+
+```{r change-estimate-summary, results='asis'}
+change_path <- file.path(data_dir, "change_estimate_comparison.xlsx")
+change_summary <- tryCatch(read_excel(change_path, sheet = "Distribution summary"), error = function(e) NULL)
+change_paired <- tryCatch(read_excel(change_path, sheet = "Paired summary"), error = function(e) NULL)
+if (!is.null(change_summary) && nrow(change_summary)) {
+  display <- change_summary[, c("method", "domains", "minimum", "median", "mean", "maximum", "unit")]
+  names(display) <- c("Method", "Domains", "Minimum", "Median", "Mean", "Maximum", "Unit")
+  print(kable(display, digits = 2, caption = "Estimated changes across matched domains (unweighted domain summaries)"))
+}
+if (!is.null(change_paired) && nrow(change_paired)) {
+  p <- change_paired[1, ]
+  cat(sprintf("\n\n**%s minus %s:** %d finite matched domains. MFH changes are lower in %d, higher in %d, and equal in %d domains. The median paired difference (MFH minus UFH) is %.2f %s. These are descriptive comparisons, not tests of the difference between estimators.\n\n",
+    p$year_to, p$year_from, p$finite_paired_domains, p$MFH_lower_domains,
+    p$MFH_higher_domains, p$equal_domains, p$median_MFH_minus_UFH_change, p$unit))
+  if (p$excluded_nonfinite_pairs + p$UFH_only_domains + p$MFH_only_domains > 0) {
+    cat(sprintf("Excluded: %d matched pairs with nonfinite changes; %d UFH-only and %d MFH-only domains.\n\n",
+      p$excluded_nonfinite_pairs, p$UFH_only_domains, p$MFH_only_domains))
+  }
+}
+```
+
+```{r change-estimate-figures}
+change_paths <- file.path(fig_dir, "change_comparisons",
+  c("change_distribution_ufh_mfh.png", "change_paired_ufh_mfh.png"))
+change_paths <- change_paths[file.exists(change_paths)]
+if (length(change_paths)) knitr::include_graphics(change_paths) else
+  cat("*No finite matched UFH-MFH changes are available for these figures.*\n")
+```
+
+### Distribution of 95% confidence-interval widths
+
+The figures below compare the full width of each pointwise 95% confidence
+interval (`upper bound - lower bound`) across matched domains. The first figure
+shows the two distributions; the second preserves the domain-level pairing.
+Points below the dashed equality line have narrower MFH intervals. A narrower
+interval does not by itself imply a significant change, because significance
+also depends on how far the estimated change lies from zero.
+
+```{r ci-width-summary, results='asis'}
+ci_width_path <- file.path(data_dir, "ci_width_comparison.xlsx")
+ci_width_domain <- tryCatch(
+  read_excel(ci_width_path, sheet = "Domain comparison"),
+  error = function(e) NULL
+)
+ci_width_summary <- tryCatch(
+  read_excel(ci_width_path, sheet = "Distribution summary"),
+  error = function(e) NULL
+)
+ci_width_paired <- tryCatch(
+  read_excel(ci_width_path, sheet = "Paired summary"),
+  error = function(e) NULL
+)
+
+if (!is.null(ci_width_summary) && nrow(ci_width_summary) > 0) {
+  ci_summary_display <- ci_width_summary
+  names(ci_summary_display) <- c(
+    method = "Method", domains = "Domains", minimum = "Minimum",
+    percentile_25 = "25th percentile", median = "Median", mean = "Mean",
+    percentile_75 = "75th percentile", maximum = "Maximum", unit = "Unit"
+  )[names(ci_summary_display)]
+  cat(as.character(kable(
+    ci_summary_display,
+    format = "html",
+    digits = 2,
+    escape = TRUE,
+    table.attr = 'class="table table-condensed"',
+    caption = "Distribution of pointwise 95% confidence-interval widths"
+  )))
+}
+
+if (!is.null(ci_width_paired) && nrow(ci_width_paired) > 0) {
+  .paired <- ci_width_paired[1, ]
+  cat(sprintf(
+    paste0(
+      "<p><strong>Paired-domain result.</strong> MFH intervals are narrower in ",
+      "%d of %d matched domains and wider in %d. The median MFH interval is ",
+      "%.1f%% narrower than the corresponding UFH interval; the median paired ",
+      "width difference (MFH minus UFH) is %.2f %s.</p>"
+    ),
+    as.integer(.paired$MFH_narrower_domains),
+    as.integer(.paired$matched_domains),
+    as.integer(.paired$MFH_wider_domains),
+    as.numeric(.paired$median_MFH_percent_width_reduction),
+    as.numeric(.paired$median_MFH_minus_UFH_width),
+    as.character(.paired$unit)
+  ))
+}
+```
+
+```{r ci-width-figures}
+ci_figure_paths <- file.path(
+  fig_dir,
+  "uncertainty_comparisons",
+  c("ci_width_distribution_ufh_mfh.png", "ci_width_paired_ufh_mfh.png")
+)
+ci_figure_paths <- ci_figure_paths[file.exists(ci_figure_paths)]
+if (length(ci_figure_paths) > 0) {
+  knitr::include_graphics(ci_figure_paths)
+} else {
+  cat("*Confidence-interval width figures were not available for this run.*\n")
+}
+```
+
+```{r excel-result-links, results='asis'}
+excel_outputs <- c(
+  "Complete consolidated result tables" = "EU_SAE_results.xlsx",
+  "Full pointwise, BH, and Bonferroni significance table" = "statistical_significance_comparison.xlsx",
+  "Confidence-interval width tables" = "ci_width_comparison.xlsx",
+  "Estimated-change comparison tables" = "change_estimate_comparison.xlsx",
+  "Detailed UFH-MFH estimate comparison" = "pov_comparison_detailed.xlsx"
+)
+available_excel <- excel_outputs[file.exists(file.path(data_dir, excel_outputs))]
+if (length(available_excel) > 0) {
+  cat('<div class="excel-output-links"><strong>Excel result tables</strong><ul>')
+  for (label in names(available_excel)) {
+    cat(sprintf(
+      '<li><a href="data/%s">%s</a></li>',
+      html_escape_text(available_excel[[label]]),
+      html_escape_text(label)
+    ))
+  }
+  cat('</ul></div>')
+}
+```
+
+```{r ai-change-significance, results='asis'}
+cat(comparison_ai_section_html(ai_state, "change_significance",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+```{r change-figures, results='asis'}
+change_files <- list.files(file.path(fig_dir, "change_figures"),
+                           pattern = "\\.png$", full.names = FALSE)
+if (length(change_files) > 0) {
+  for (f in sort(change_files)) {
+    label <- gsub("_", " ", tools::file_path_sans_ext(f))
+    cat(sprintf("\n### %s\n\n", label))
+    cat(sprintf("![%s](%s)\n\n", label,
+                file.path(fig_dir, "change_figures", f)))
+  }
+} else {
+  cat("*No change figures available.*\n")
+}
+```
+
+```{r ai-change-maps, results='asis'}
+cat(comparison_ai_section_html(ai_state, "change_maps",
+                               include_ai = isTRUE(params$include_ai)))
+```
+
+# Session Information
+
+```{r session-info}
+session_path <- here::here("outputs", "data", "session_info.txt")
+if (file.exists(session_path)) {
+  cat("```\n")
+  cat(readLines(session_path), sep = "\n")
+  cat("\n```\n")
+} else {
+  cat("*Session info not yet generated.*\n")
+}
+```

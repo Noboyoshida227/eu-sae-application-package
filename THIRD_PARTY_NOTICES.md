@@ -1,0 +1,16 @@
+# Third-party and non-code material
+
+This inventory records known rights issues; it does not grant permission.
+
+| Material | Origin/status | Distribution treatment |
+|---|---|---|
+| `Data/Spain/survey.rds`, `Data/Spain/auxiliary.rds` (Spain example) | Derived from `incomedata` in the CRAN package `sae` (Molina & Marhuenda), which its authors document as *synthetic* data for Spanish provinces -- not real respondent microdata. Restructured here into a three-period panel. `sae` is distributed under GPL-2. | Included in the clean distribution **under GPL-2**, not under this package's MIT grant. Attribution and citation in `Data/Spain/README.md`; the required GPL-2 licence text is shipped at `LICENSES/GPL-2.0.txt`. The derivation script is not held, so the files cannot be regenerated from source; reproducibility remains an open checklist item. |
+| `Data/Spain/shapefile.rds` and `Data/Spain/IGN_source/` | IGN/CNIG CartoBase ANE 2024 edition, 1:3,000,000, obtained through a pinned mapSpain mirror. Historical records covering 2012–2014; 52 provinces, 30,223 coordinate rows, WGS84. No geometry from the former unverified map is included. | CC BY 4.0, separate from MIT and GPL-2. Required derived-work credit: Obra derivada de CartoBase ANE 2006-2024 CC-BY 4.0 ign.es. Original GeoPackages, IGN licence, SHA-256 hashes, source URLs, crosswalk and offline regeneration script are included. Preserve attribution and change notices; see `Data/Spain/README.md`. |
+| `Data/simulated/` (`survey_example.csv`, `auxiliary_example.csv`, `geometry_example.geojson`) | Fully synthetic original work, generated for this package by the included seeded script `Data/simulated/generate_example_data.py`. No third-party data, no real-world data, and no derivation from any GPL-licensed dataset. | Included in the clean distribution under the package licence; regenerable byte-for-byte from the included script. See `Data/simulated/README.md`. |
+| Eight literature PDFs formerly in `docs/guidance/literature/` | Publisher and institutional documents with differing terms. Some are open access, but the repository did not preserve the required licence/attribution record; others have no established redistribution permission. | Removed from the candidate working tree and excluded from clean distributions. Citations replace local copies. Historical Git objects still require remediation. |
+| Guidance note, technical notes, download instructions and dashboard guide | Existing files assert World Bank Group authorship/affiliation. Repository-level authority to license or publish them has not been documented. | Outside the MIT grant; publication requires institutional approval. |
+| `www/eu_poverty_map.png` | Cover illustration used across World Bank presentations and publications, retained here for consistency with them. The originating source and licence record are held outside this repository and are being obtained by the release manager; they are not yet recorded here. | Included in the distribution. The source and licence record should be attached to this entry before the repository is made public. |
+
+See `docs/guidance/literature/README.md`, `Data/Spain/README.md`, `NOTICE`, and
+`docs/HISTORY_REMEDIATION.md`. This file should be replaced by an approved rights
+inventory before a production release.

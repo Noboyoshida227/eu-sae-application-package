@@ -1,0 +1,14 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Binary file types - never normalize line endings
+*.pdf  binary
+*.docx binary
+*.pptx binary
+*.xlsx binary
+*.rds  binary
+*.RData binary
+*.rda  binary
+*.png  binary
+*.jpg  binary
+*.zip  binary

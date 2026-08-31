@@ -1,0 +1,10 @@
+EU SAE candidate 5.2.0-rc.6-wizard.3-pointwise - reorganized layout
+Prepared for review only; not authorized for public distribution or official statistics.
+Includes only the explicit scripts/release_inventory.csv file list.
+Windows: open Start_Here and run Start_Wizard.bat or Start_Dashboard.bat. Keep Start_Here inside the package.
+Reports: final_report.html and editable final_report.docx; comparison outputs include signed estimated-change figures alongside CI-width figures.
+Excluded: internal notes, non-inventory literature, user Data folders, local libraries, credentials, run histories, generated outputs and local diagnostics.
+Spain boundaries now use documented IGN/CNIG CartoBase ANE (CC BY 4.0); the survey derivation script remains missing.
+MCPE independent validation, platform smoke tests, rights and institutional approval remain release gates.
+Review docs/RELEASE_CHECKLIST.md, docs/MCPE_VALIDATION_STATUS.md, docs/HISTORY_REMEDIATION.md and THIRD_PARTY_NOTICES.md.
+No Git history is included; this build does not remediate earlier repository objects or releases.

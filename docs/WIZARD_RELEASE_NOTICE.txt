@@ -1,0 +1,58 @@
+EU SAE APPLICATION PACKAGE - WIZARD RELEASE NOTICE
+
+Wizard overlay version: 5.2.0-rc.6-wizard.3-pointwise
+Underlying package version: 5.2.0-rc.6
+
+This candidate was assembled from the verified 5.2.0-rc.5 wizard distribution
+and adds the rc.6 AI-report integration. Statistical processing is completed
+before optional AI interpretations are generated, and final_report.html is then
+rendered exactly once, followed by its editable final_report.docx companion.
+When AI is requested, both formats interleave visibly labelled interpretation
+blocks with generated, failed, or disabled status for all seven
+interpretation sections. Provider/model metadata and structured status are
+saved in outputs/data/ai_interpretations.rds. Provider text is HTML-escaped and
+numeric provenance is checked as a warning-only review aid.
+
+This wizard.3 methodological revision retains MFH2 as the default MFH model.
+When a user selects MFH3, the app follows the Molina-Romero sequence: MFH3 is
+fitted first; a failed or non-converged fit moves automatically to MFH2. A
+converged MFH3 fit is retained only when its random-effect variance-homogeneity
+test supports heterogeneity after the selected multiplicity adjustment
+(Bonferroni by default). Raw, Bonferroni, and BH results are all exported. The
+MFH3 MCPE bootstrap includes the specified u0 ~ N(0,1) initial state, and every
+MFH bootstrap records Monte Carlo standard errors and
+refit/positive-definite-repair diagnostics. Independent simulation validation
+of MCPE bias and coverage remains required before public release.
+
+The wizard and classic dashboard share the same analysis server. They differ
+only in how inputs are arranged. Start_Here/Start_Wizard.bat launches the six-step wizard
+on localhost port 7788; Start_Here/Start_Dashboard.bat launches the classic dashboard on
+port 7777.
+
+Two example datasets are bundled, both for learning and testing only.
+Data/simulated/ holds fully synthetic files with the seeded script that
+generates them. Data/Spain/ holds the Spain province example derived from the
+GPL-2 sae package; the survey and auxiliary files retain GPL-2 terms.
+The replacement map is IGN/CNIG CartoBase ANE under CC BY 4.0, with required
+attribution and a reproducible source record. See Data/Spain/README.md and
+THIRD_PARTY_NOTICES.md. The survey derivation script remains missing. Neither set may feed a real
+estimate; for actual analyses users must select their own survey, auxiliary,
+and geometry files. If the AI Assistant is enabled, users must
+separately acknowledge the external data transfer described in the interface.
+The resulting AI text remains advisory and requires documented human review
+before any dissemination. The standalone comparison_ai_note.html is deprecated
+and is no longer produced.
+
+The primary guidance for this overlay is
+docs/guidance/guidelines_v5_2_0_rc6_wizard.docx.
+The scope and limitations of the current MCPE checks are recorded in
+docs/MCPE_VALIDATION_STATUS.md.
+
+This remains a release candidate. The institutional-rights and repository-
+history conditions described in docs/RELEASE_CHECKLIST.md and
+docs/HISTORY_REMEDIATION.md still apply before public distribution.
+
+Both report formats include signed estimated-change and CI-width comparisons.
+Word text/tables are editable; figures are embedded images. Pandoc, xml2 and zip
+are required for Word export. Conversion warnings preserve the completed HTML.
+Generated reports and run histories remain excluded from the clean ZIP.

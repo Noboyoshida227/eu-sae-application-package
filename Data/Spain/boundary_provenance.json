@@ -1,0 +1,22 @@
+{
+  "provider": "Instituto Geografico Nacional (IGN), Spain",
+  "product": "CartoBase ANE",
+  "scale": "1:3,000,000",
+  "source_edition": "2024; mapSpain mirror README last update 2024-08-02",
+  "valid_period": ["2012-01-01", "2014-12-31"],
+  "licence": "CC-BY-4.0",
+  "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+  "provider_licence_url": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
+  "catalogue_url": "https://centrodedescargas.cnig.es/CentroDescargas/cartobase-ane",
+  "distribution": "Pinned mapSpain CDN mirror of IGN CartoBase ANE, not a direct CNIG download",
+  "mirror_commit": "4cd2698c3f6783eb1498edfe0224646953abe71c",
+  "source_files": ["se89_3_admin_prov_a_x.gpkg", "se89_3_admin_prov_a_y.gpkg"],
+  "source_sha256": ["a9dd54dcb4778d99caacc85891dba54a359c636fe5548b4f7a8490ac57cd2117", "796c8e24ee06361d267cb9641a741f12773dce2d28f1c1e3065bc63b7d18d8aa"],
+  "source_urls": ["https://raw.githubusercontent.com/rOpenSpain/mapSpain/4cd2698c3f6783eb1498edfe0224646953abe71c/dist/se89_3_admin_prov_a_x.gpkg", "https://raw.githubusercontent.com/rOpenSpain/mapSpain/4cd2698c3f6783eb1498edfe0224646953abe71c/dist/se89_3_admin_prov_a_y.gpkg"],
+  "attribution": "Obra derivada de CartoBase ANE 2006-2024 CC-BY 4.0 ign.es",
+  "modifications": ["Selected records valid throughout 2012-2014", "Combined mainland/Balearic and Canary layers", "Mapped INE id_prov to existing prov and provlab labels", "Transformed declared EPSG:4258 to EPSG:4326", "Retained Canaries in geographic position; no further simplification"],
+  "repaired_province_ids": [14, 39, 41, 45],
+  "output_sha256": "cc00941daf511d2ec5dac279e0560094ffec02b77778dd56357697ec6b9585f7",
+  "features": 52,
+  "coordinate_rows": 30223
+}
