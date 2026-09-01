@@ -1,6 +1,7 @@
 # Authoritative candidate builder. Run from the package root.
 source(file.path("R", "release_controls.R"))
 source(file.path("R", "release_packaging.R"))
+source(file.path("R", "zip_permissions.R"))
 args <- commandArgs(trailingOnly = TRUE)
 target <- if (length(args)) args[[1L]] else file.path("dist", "reorganized_candidate")
 root <- normalizePath(".", winslash = "/", mustWork = TRUE)
@@ -37,6 +38,7 @@ writeLines(c(
   "Prepared for review only; not authorized for public distribution or official statistics.",
   "Includes only the explicit scripts/release_inventory.csv file list.",
   "Windows: open Start_Here and run Start_Wizard.bat or Start_Dashboard.bat. Keep Start_Here inside the package.",
+  "macOS/Linux: open Start_Here and run Start_Wizard.command or Start_Dashboard.command (double-click on macOS). Keep Start_Here inside the package.",
   "Reports: final_report.html and editable final_report.docx; comparison outputs include signed estimated-change figures alongside CI-width figures.",
   "Excluded: internal notes, non-inventory literature, user Data folders, local libraries, credentials, run histories, generated outputs and local diagnostics.",
   "Spain boundaries now use documented IGN/CNIG CartoBase ANE (CC BY 4.0); the survey derivation script remains missing.",
@@ -48,6 +50,14 @@ sae_write_release_manifest(stage)
 sae_verify_release(stage)
 archive <- file.path(target, paste0(package_name, "_reports_candidate.zip"))
 zip::zipr(archive, files = package_name, root = target, include_directories = TRUE)
+# A ZIP written on Windows records no Unix permission bits, so the macOS/Linux
+# launchers would extract without the executable flag and Finder would refuse to
+# run them. Mark them executable before the archive is hashed, so the published
+# SHA-256 matches the file recipients actually download. The re-extraction and
+# manifest verification below run afterwards and would catch any corruption.
+exec_marked <- sae_set_zip_exec_bits(archive, patterns = c("\\.command$", "\\.sh$"))
+if (!length(exec_marked)) stop("No launcher entries were marked executable in the archive.")
+cat("Marked executable in archive:\n"); cat(paste0("  ", exec_marked, collapse = "\n"), "\n")
 checksum <- sae_sha256_file(archive)
 if (is.na(checksum)) stop("Archive checksum failed.")
 writeLines(paste(checksum, basename(archive), sep = "  "), file.path(target, "SHA256SUMS.txt"))

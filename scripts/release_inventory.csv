@@ -42,11 +42,14 @@ R/report_export.R
 R/report_word.lua
 R/validation_checks.R
 R/variance_policy.R
+R/zip_permissions.R
 README.md
 Start_Dashboard.sh
 Start_Here/README.md
 Start_Here/Start_Dashboard.bat
+Start_Here/Start_Dashboard.command
 Start_Here/Start_Wizard.bat
+Start_Here/Start_Wizard.command
 THIRD_PARTY_NOTICES.md
 VERSION
 WIZARD_VERSION

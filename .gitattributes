@@ -12,3 +12,11 @@
 *.png  binary
 *.jpg  binary
 *.zip  binary
+
+# Launchers: line endings are load-bearing.
+# A .sh or .command file with CRLF fails on macOS/Linux with
+#   bad interpreter: /usr/bin/env bash^M: no such file or directory
+*.sh      text eol=lf
+*.command text eol=lf
+# Windows batch files must keep CRLF.
+*.bat     text eol=crlf
