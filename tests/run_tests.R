@@ -566,36 +566,49 @@ unlink(path_fixture, recursive = TRUE)
 
 # IGN boundary and attribution regression checks.
 source("R/input_readers.R")
-ign_geometry <- sae_read_geometry_input("Data/Spain/shapefile.rds")
-ign_aux <- readRDS("Data/Spain/auxiliary.rds")
-ign_names <- unique(as.data.frame(ign_aux)[, c("prov", "provlab")])
-ign_names <- ign_names[order(ign_names$prov), ]
-check(identical(names(ign_geometry), c("prov", "provlab", "geometry")) &&
-      identical(ign_geometry$prov, 1:52) &&
-      identical(ign_geometry$provlab, as.character(ign_names$provlab)),
-      "IGN boundaries preserve all 52 province IDs and existing names")
-check(requireNamespace("sf", quietly = TRUE) &&
-      all(sf::st_is_valid(ign_geometry)) && !any(sf::st_is_empty(ign_geometry)) &&
-      sf::st_crs(ign_geometry)$epsg == 4326L,
-      "IGN boundary geometry is valid, nonempty and WGS84")
-ign_credit <- "Obra derivada de CartoBase ANE 2006-2024 CC-BY 4.0 ign.es"
-check(identical(sae_map_caption(ign_geometry, "Estimates: authors"),
-                paste("Estimates: authors", ign_credit, sep = "\n")),
-      "map caption preserves estimate credit and adds selected boundary attribution")
-ign_renamed <- dplyr::mutate(dplyr::rename(ign_geometry, domain = prov),
-                             domain = as.character(domain))
-attr(ign_renamed, "boundary_attribution") <- sae_boundary_attribution(ign_geometry)
-ign_renamed <- sae_drop_domain_label_columns(ign_renamed)
-check(identical(sae_boundary_attribution(ign_renamed), ign_credit),
-      "boundary attribution survives pipeline domain-label cleanup")
-uncredited_geometry <- ign_geometry
-attr(uncredited_geometry, "boundary_attribution") <- NULL
-check(is.null(sae_map_caption(uncredited_geometry)) &&
-      identical(sae_map_caption(uncredited_geometry, "User data"), "User data"),
-      "uncredited user geometry never receives IGN attribution")
-attr(uncredited_geometry, "boundary_attribution") <- "Different provider"
-check(identical(sae_map_caption(uncredited_geometry), "Different provider"),
-      "map attribution follows the selected provider rather than the Spain example")
+# Data/Spain/auxiliary.rds is deliberately excluded from the repository
+# (GPL-2; see THIRD_PARTY_NOTICES.md), so these checks run only where the
+# Spain example data is present - a full working copy or an extracted release
+# archive - and are skipped in a fresh clone such as CI.
+if (file.exists("Data/Spain/auxiliary.rds") &&
+    file.exists("Data/Spain/shapefile.rds")) {
+  ign_geometry <- sae_read_geometry_input("Data/Spain/shapefile.rds")
+  ign_aux <- readRDS("Data/Spain/auxiliary.rds")
+  ign_names <- unique(as.data.frame(ign_aux)[, c("prov", "provlab")])
+  ign_names <- ign_names[order(ign_names$prov), ]
+  check(identical(names(ign_geometry), c("prov", "provlab", "geometry")) &&
+        identical(ign_geometry$prov, 1:52) &&
+        identical(ign_geometry$provlab, as.character(ign_names$provlab)),
+        "IGN boundaries preserve all 52 province IDs and existing names")
+  if (requireNamespace("sf", quietly = TRUE)) {
+    check(all(sf::st_is_valid(ign_geometry)) && !any(sf::st_is_empty(ign_geometry)) &&
+          sf::st_crs(ign_geometry)$epsg == 4326L,
+          "IGN boundary geometry is valid, nonempty and WGS84")
+  } else {
+    message("SKIP: IGN boundary geometry check (sf not installed).")
+  }
+  ign_credit <- "Obra derivada de CartoBase ANE 2006-2024 CC-BY 4.0 ign.es"
+  check(identical(sae_map_caption(ign_geometry, "Estimates: authors"),
+                  paste("Estimates: authors", ign_credit, sep = "\n")),
+        "map caption preserves estimate credit and adds selected boundary attribution")
+  ign_renamed <- dplyr::mutate(dplyr::rename(ign_geometry, domain = prov),
+                               domain = as.character(domain))
+  attr(ign_renamed, "boundary_attribution") <- sae_boundary_attribution(ign_geometry)
+  ign_renamed <- sae_drop_domain_label_columns(ign_renamed)
+  check(identical(sae_boundary_attribution(ign_renamed), ign_credit),
+        "boundary attribution survives pipeline domain-label cleanup")
+  uncredited_geometry <- ign_geometry
+  attr(uncredited_geometry, "boundary_attribution") <- NULL
+  check(is.null(sae_map_caption(uncredited_geometry)) &&
+        identical(sae_map_caption(uncredited_geometry, "User data"), "User data"),
+        "uncredited user geometry never receives IGN attribution")
+  attr(uncredited_geometry, "boundary_attribution") <- "Different provider"
+  check(identical(sae_map_caption(uncredited_geometry), "Different provider"),
+        "map attribution follows the selected provider rather than the Spain example")
+} else {
+  message("SKIP: IGN boundary and attribution checks (Spain example data not present).")
+}
+
 check(!inherits(try(parse("Data/Spain/generate_spain_boundary.R", encoding = "UTF-8"),
                      silent = TRUE), "try-error"),
       "offline IGN boundary generator parses")
