@@ -1,6 +1,6 @@
 EU SAE APPLICATION PACKAGE - WIZARD RELEASE NOTICE
 
-Wizard overlay version: 5.2.0-rc.6-wizard.3-pointwise
+Wizard overlay version: 5.2.0-rc.6-wizard.4-crossplatform
 Underlying package version: 5.2.0-rc.6
 
 This candidate was assembled from the verified 5.2.0-rc.5 wizard distribution
@@ -13,7 +13,12 @@ interpretation sections. Provider/model metadata and structured status are
 saved in outputs/data/ai_interpretations.rds. Provider text is HTML-escaped and
 numeric provenance is checked as a warning-only review aid.
 
-This wizard.3 methodological revision retains MFH2 as the default MFH model.
+wizard.4 adds macOS/Linux launchers in Start_Here, stores them executable inside
+the release ZIP, and closes a platform-dependent gap in the MFH2 inverse
+safeguard; see docs/CHANGELOG.md.
+
+The wizard.3 methodological revision retained MFH2 as the default MFH model,
+and wizard.4 does not change it.
 When a user selects MFH3, the app follows the Molina-Romero sequence: MFH3 is
 fitted first; a failed or non-converged fit moves automatically to MFH2. A
 converged MFH3 fit is retained only when its random-effect variance-homogeneity
@@ -27,8 +32,9 @@ of MCPE bias and coverage remains required before public release.
 The wizard and classic dashboard share the same analysis server. They differ
 only in how inputs are arranged. Start_Here/Start_Wizard.bat launches the six-step wizard
 on localhost port 7788; Start_Here/Start_Dashboard.bat launches the classic dashboard on
-port 7777. On macOS, use Start_Here/Start_Wizard.command or
-Start_Here/Start_Dashboard.command. R 4.2 or later is required; the newest
+port 7777. On macOS, double-click Start_Here/Start_Wizard.command or
+Start_Here/Start_Dashboard.command; on Linux, run them with bash from a
+terminal. R 4.2 or later is required; the newest
 organization-approved version is recommended, but the absolute latest R release
 is not required.
 

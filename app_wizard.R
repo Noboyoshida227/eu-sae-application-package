@@ -1143,8 +1143,8 @@ ui <- fluidPage(
         style = "font-size: 12px; color: #556; padding-left: 18px; margin-top: 0;",
         tags$li(tags$code("docs/guidance/guidelines_v5_2_0_rc6_wizard.docx")),
         tags$li(tags$code("docs/MCPE_VALIDATION_STATUS.md")),
-        tags$li(tags$code("docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_3_pointwise.pdf")),
-        tags$li(tags$code("docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_3_pointwise.pptx")),
+        tags$li(tags$code("docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_4_crossplatform.pdf")),
+        tags$li(tags$code("docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_4_crossplatform.pptx")),
         tags$li(tags$code("outputs/final_report.html"), " after a completed run")
       )
     )

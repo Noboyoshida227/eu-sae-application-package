@@ -1,7 +1,7 @@
 @echo off
 setlocal DisableDelayedExpansion
 REM ============================================================
-REM  EU SAE Dashboard - One-click launcher (Windows)
+REM  EU SAE Dashboard 5.2.0-rc.6-wizard.4-crossplatform - One-click launcher (Windows)
 REM
 REM  Double-click this file to start the dashboard.
 REM  Your default web browser will open with the dashboard.

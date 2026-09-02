@@ -21,13 +21,18 @@ candidate label to a production version.
 - [ ] AI transfer has a lawful basis, approved providers/endpoints, retention
       terms, and a reviewed privacy notice; otherwise AI remains disabled.
 - [ ] Windows, macOS, and Linux smoke tests pass on the supported matrix.
+- [ ] macOS: extract the release ZIP on a Mac and start the wizard by
+      double-clicking `Start_Here/Start_Wizard.command` in Finder. This
+      exercises the executable bit stored in the ZIP and the Gatekeeper prompt.
 - [ ] At least one managed-environment test uses an organization-approved R
       4.2+ version that is not the newest available R release.
 - [ ] `Rscript tests/run_tests.R` passes in the release environment.
 - [ ] `Rscript scripts/check_dependency_lock.R` passes.
-- [ ] A clean distribution is built with `scripts/build_clean_release.R`.
+- [ ] `docs/CHANGELOG.md` has an entry for this `WIZARD_VERSION`.
+- [ ] The release is built with `Release.ps1` on a clean, committed tree;
+      `RELEASE_INFO.txt` in the release folder names the commit.
 - [ ] Release manifest/checksums are regenerated and independently verified.
-- [ ] The Git tag exactly matches VERSION and uses one canonical case.
+- [ ] The Git tag is `v<WIZARD_VERSION>` on the commit named in `RELEASE_INFO.txt`.
 - [ ] Only the history-free folder produced by `scripts/build_clean_release.R`
       is archived; the source workspace itself is not zipped.
 - [ ] Release notes list all known limitations and methodology assumptions.

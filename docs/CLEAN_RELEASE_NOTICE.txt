@@ -1,4 +1,4 @@
-EU SAE candidate 5.2.0-rc.6-wizard.3-pointwise - reorganized layout
+EU SAE candidate 5.2.0-rc.6-wizard.4-crossplatform - reorganized layout
 Prepared for review only; not authorized for public distribution or official statistics.
 Includes only the explicit scripts/release_inventory.csv file list.
 Windows: open Start_Here and run Start_Wizard.bat or Start_Dashboard.bat. Keep Start_Here inside the package.

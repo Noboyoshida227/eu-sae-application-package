@@ -1,13 +1,40 @@
 # Changelog
 
+## 5.2.0-rc.6-wizard.4-crossplatform - 2026-09-01
+
+- Added macOS/Linux launchers `Start_Here/Start_Wizard.command` and
+  `Start_Here/Start_Dashboard.command`, double-clickable in Finder. The former
+  `Start_Dashboard.sh` had Windows line endings (its shebang failed), sat
+  outside `Start_Here`, and had no wizard equivalent; it now hands over to the
+  new launcher.
+- The release builder marks the launchers executable inside the ZIP
+  (`R/zip_permissions.R`). An archive written on Windows records no Unix
+  permission bits, so the launchers would otherwise arrive unable to run.
+- Fixed a platform-dependent gap in `scripts/eblupMFH2_robust.R`: a matrix
+  containing non-finite values could pass `chol()` on some R/LAPACK builds and
+  be returned as an available, all-NaN inverse instead of being reported
+  unavailable. Non-finite input is now rejected before any decomposition.
+- Documentation: launch instructions for all three platforms, including the
+  macOS first-launch security prompt; the newest organisation-approved R 4.2+
+  is sufficient; one Pandoc provider (RStudio Desktop, Quarto, or standalone
+  Pandoc) is enough for report rendering.
+- Continuous integration installs the packages the test suite needs, and the
+  suite skips the Spain example-data checks in a clone (that data is excluded
+  from the repository by licence). The suite had never previously run to
+  completion; on its first full run it found the `chol()` gap above.
+- Release process: `tools/bump_version.py` propagates the version to every
+  file and filename that embeds it; `Release.ps1` refuses to build from an
+  uncommitted tree, names the release folder by version, requires a CHANGELOG
+  entry, and records the commit. See `docs/RELEASING.md`.
+
 ## 27 August 2026 — report formats and documentation
 
-+- Added editable Word reports alongside HTML, without recomputing estimates.
-+- Added distribution and paired-domain figures for signed estimated changes;
-+  retained the existing CI-width figures and exported their source values.
-+- Updated guidance, download instructions, slide guide, and operational notes
-+  for both formats, dependencies, archives, and conversion warnings.
-+- Clarified that dispersion across estimated changes is not prediction MSE.
+- Added editable Word reports alongside HTML, without recomputing estimates.
+- Added distribution and paired-domain figures for signed estimated changes;
+  retained the existing CI-width figures and exported their source values.
+- Updated guidance, download instructions, slide guide, and operational notes
+  for both formats, dependencies, archives, and conversion warnings.
+- Clarified that dispersion across estimated changes is not prediction MSE.
 
 
 ## 5.2.0-rc.6-wizard.3-pointwise - 2026-08-25

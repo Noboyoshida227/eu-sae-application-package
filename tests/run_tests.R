@@ -17,8 +17,14 @@ parse_ok <- vapply(r_files, function(path) {
 check(all(parse_ok), "all R sources parse")
 check(identical(trimws(readLines("VERSION", warn = FALSE)[1]), "5.2.0-rc.6"), "VERSION is the candidate version")
 check(identical(trimws(readLines("WIZARD_VERSION", warn = FALSE)[1]),
-                "5.2.0-rc.6-wizard.3-pointwise"),
+                "5.2.0-rc.6-wizard.4-crossplatform"),
       "WIZARD_VERSION identifies the rc.6 wizard overlay")
+wizard_version <- trimws(readLines("WIZARD_VERSION", warn = FALSE)[1])
+changelog_text <- read_all("docs/CHANGELOG.md")
+check(grepl(paste0("## ", wizard_version), changelog_text, fixed = TRUE),
+      "CHANGELOG has an entry for the current WIZARD_VERSION")
+check(!grepl("\n\\+", changelog_text),
+      "CHANGELOG contains no pasted diff markers")
 
 app_text <- read_all("app.R")
 wizard_text <- read_all("app_wizard.R")
@@ -105,8 +111,8 @@ check(grepl("sae_write_release_manifest", wizard_manifest_text, fixed = TRUE),
 wizard_resources <- c(
   "docs/guidance/guidelines_v5_2_0_rc6_wizard.docx",
   "docs/MCPE_VALIDATION_STATUS.md",
-  "docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_3_pointwise.pdf",
-  "docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_3_pointwise.pptx"
+  "docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_4_crossplatform.pdf",
+  "docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_4_crossplatform.pptx"
 )
 check(all(vapply(wizard_resources, file.exists, logical(1))) &&
         all(vapply(wizard_resources, grepl, logical(1), x = wizard_text,

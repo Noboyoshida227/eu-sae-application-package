@@ -31,8 +31,8 @@ Ports advance if occupied. There is no supplied wizard shell launcher; manual
 launch through R remains possible from the package root using
 `source("app_wizard.R")` after installing dependencies.
 
-- [Download and verification instructions](docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_3_pointwise.pdf)
-- [Wizard reference](docs/README_WIZARD.md) and [slide guide](docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_3_pointwise.pptx)
+- [Download and verification instructions](docs/instructions/EU_SAE_Download_Instructions_5_2_0_rc_6_wizard_4_crossplatform.pdf)
+- [Wizard reference](docs/README_WIZARD.md) and [slide guide](docs/instructions/EU_SAE_User_Guide_5_2_0_rc_6_wizard_4_crossplatform.pptx)
 - [Methodological guidance](docs/guidance/guidelines_v5_2_0_rc6_wizard.docx)
 - [Examples and your own input folders](Data/README.md)
 
