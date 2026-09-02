@@ -3,7 +3,12 @@
 ## Start here
 
 Install **R 4.2 or later** and run `install_packages.R` once to install the
-required packages. Report rendering also requires Pandoc; `sf` needs its
+required packages. Use the newest R version that your organization has approved
+and made available; installing the absolute latest release is not required.
+For report rendering, install one free Pandoc provider: [RStudio
+Desktop](https://posit.co/download/rstudio-desktop/),
+[Quarto](https://quarto.org/docs/get-started/), or [standalone
+Pandoc](https://pandoc.org/installing.html). The `sf` package also needs its
 platform-specific system libraries. Keep the launcher window open while using
 the application.
 
@@ -11,9 +16,16 @@ the application.
 |---|---|
 | Guided wizard (recommended on Windows) | Double-click `Start_Here/Start_Wizard.bat`; normally port 7788 |
 | Classic dashboard on Windows | Double-click `Start_Here/Start_Dashboard.bat`; normally port 7777 |
-| Classic dashboard on macOS/Linux | Run `bash Start_Dashboard.sh` |
+| Guided wizard on macOS | Double-click `Start_Here/Start_Wizard.command` |
+| Classic dashboard on macOS | Double-click `Start_Here/Start_Dashboard.command` |
+| Guided wizard on Linux | Run `bash Start_Here/Start_Wizard.command` |
+| Classic dashboard on Linux | Run `bash Start_Here/Start_Dashboard.command` |
 
-On Windows, open the **Start_Here** folder and choose a launcher. Keep this folder inside the extracted package; it runs the application from its parent directory. The macOS/Linux shell launcher stays at the package root.
+On Windows or macOS, open the **Start_Here** folder and choose a launcher. Keep
+this folder inside the extracted package; it runs the application from its
+parent directory. On first use, macOS may require Control-clicking the launcher
+and choosing **Open**. See `Start_Here/README.md` for Gatekeeper and executable-
+permission help.
 
 Ports advance if occupied. There is no supplied wizard shell launcher; manual
 launch through R remains possible from the package root using

@@ -21,6 +21,8 @@ candidate label to a production version.
 - [ ] AI transfer has a lawful basis, approved providers/endpoints, retention
       terms, and a reviewed privacy notice; otherwise AI remains disabled.
 - [ ] Windows, macOS, and Linux smoke tests pass on the supported matrix.
+- [ ] At least one managed-environment test uses an organization-approved R
+      4.2+ version that is not the newest available R release.
 - [ ] `Rscript tests/run_tests.R` passes in the release environment.
 - [ ] `Rscript scripts/check_dependency_lock.R` passes.
 - [ ] A clean distribution is built with `scripts/build_clean_release.R`.
@@ -38,6 +40,7 @@ candidate label to a production version.
       tables and figure captions are readable.
 - [ ] Estimated-change and CI-width plots are present and clearly distinguished.
 - [ ] AI status labels and review warnings appear in both formats.
-- [ ] Pandoc, `xml2`, and `zip` are available on each supported platform.
+- [ ] One Pandoc provider (RStudio Desktop, Quarto, or standalone Pandoc), plus
+      `xml2` and `zip`, is available on each supported platform.
 - [ ] Generated reports and run histories are excluded from the clean ZIP;
       documentation, manifest, and ZIP checksums describe the same candidate.

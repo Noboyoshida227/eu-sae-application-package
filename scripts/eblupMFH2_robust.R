@@ -80,8 +80,26 @@
 
 .safe_sym_inverse <- function(x, label) {
   x <- (x + t(x)) / 2
+  # A matrix holding NA/NaN/Inf must never reach chol(). Whether chol()
+  # signals an error for such input is platform- and LAPACK-dependent: where
+  # it does not, it returns a non-finite factor, chol2inv() propagates the
+  # non-finite values without complaint, and this function would report an
+  # "available" inverse that silently turns every MSE term derived from it
+  # into NaN - the exact outcome the unavailable path exists to prevent.
+  # Rejecting non-finite input up front makes the result identical on every
+  # platform and R version.
+  if (!all(is.finite(x))) {
+    warning(sprintf(
+      "%s contained non-finite values; affected MSE terms are reported as unavailable.",
+      label
+    ), call. = FALSE)
+    return(list(inverse = NULL, method = "unavailable",
+                condition_number = Inf,
+                condition_number_method = "exact_kappa",
+                available = FALSE))
+  }
   chol_x <- tryCatch(chol(x), error = function(e) NULL)
-  if (!is.null(chol_x)) {
+  if (!is.null(chol_x) && all(is.finite(chol_x))) {
     # For a symmetric positive-definite matrix x = R'R, the 2-norm
     # condition number of x is the square of the condition number of R.
     # kappa(..., exact = FALSE) uses a low-cost triangular-factor estimate;

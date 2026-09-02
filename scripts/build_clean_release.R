@@ -39,6 +39,7 @@ writeLines(c(
   "Includes only the explicit scripts/release_inventory.csv file list.",
   "Windows: open Start_Here and run Start_Wizard.bat or Start_Dashboard.bat. Keep Start_Here inside the package.",
   "macOS/Linux: open Start_Here and run Start_Wizard.command or Start_Dashboard.command (double-click on macOS). Keep Start_Here inside the package.",
+  "Prerequisites: R 4.2+ (use the newest version approved by your organization) and one free Pandoc provider: RStudio Desktop, Quarto or standalone Pandoc.",
   "Reports: final_report.html and editable final_report.docx; comparison outputs include signed estimated-change figures alongside CI-width figures.",
   "Excluded: internal notes, non-inventory literature, user Data folders, local libraries, credentials, run histories, generated outputs and local diagnostics.",
   "Spain boundaries now use documented IGN/CNIG CartoBase ANE (CC BY 4.0); the survey derivation script remains missing.",

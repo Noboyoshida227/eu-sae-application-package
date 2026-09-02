@@ -27,7 +27,10 @@ of MCPE bias and coverage remains required before public release.
 The wizard and classic dashboard share the same analysis server. They differ
 only in how inputs are arranged. Start_Here/Start_Wizard.bat launches the six-step wizard
 on localhost port 7788; Start_Here/Start_Dashboard.bat launches the classic dashboard on
-port 7777.
+port 7777. On macOS, use Start_Here/Start_Wizard.command or
+Start_Here/Start_Dashboard.command. R 4.2 or later is required; the newest
+organization-approved version is recommended, but the absolute latest R release
+is not required.
 
 Two example datasets are bundled, both for learning and testing only.
 Data/simulated/ holds fully synthetic files with the seeded script that
@@ -53,6 +56,7 @@ history conditions described in docs/RELEASE_CHECKLIST.md and
 docs/HISTORY_REMEDIATION.md still apply before public distribution.
 
 Both report formats include signed estimated-change and CI-width comparisons.
-Word text/tables are editable; figures are embedded images. Pandoc, xml2 and zip
-are required for Word export. Conversion warnings preserve the completed HTML.
+Word text/tables are editable; figures are embedded images. Install one free
+Pandoc provider (RStudio Desktop, Quarto, or standalone Pandoc); xml2 and zip
+are also required for Word export. Conversion warnings preserve the completed HTML.
 Generated reports and run histories remain excluded from the clean ZIP.

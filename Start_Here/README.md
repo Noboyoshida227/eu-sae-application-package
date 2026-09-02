@@ -17,8 +17,24 @@ closing it stops the application.
 The first run takes several minutes while R packages install, and needs an
 internet connection. Later runs start much faster.
 
-You need **R 4.2.0 or later**, from <https://cran.r-project.org/>. On a Mac,
-choose the `.pkg` installer matching your chip (Apple silicon or Intel).
+## Before the first launch
+
+1. Install **R 4.2.0 or later** from <https://cran.r-project.org/>. Use the
+   newest R version that your organization has approved and made available;
+   installing the absolute latest R release is not required. On a managed
+   computer, do not replace your organization's R installation unless IT asks
+   you to. On a Mac, choose the `.pkg` installer matching your chip (Apple
+   silicon or Intel).
+2. For HTML and Word reports, install **one** of these free options. You do not
+   need all three:
+   - **RStudio Desktop:** <https://posit.co/download/rstudio-desktop/>
+   - **Quarto:** <https://quarto.org/docs/get-started/>
+   - **Standalone Pandoc:** <https://pandoc.org/installing.html>
+
+The application may open without Pandoc, but report creation will fail. If your
+organization limits software or R-package installation, ask IT for an approved
+R 4.2+ installation, one option above, and access to the approved R package
+repository.
 
 ---
 

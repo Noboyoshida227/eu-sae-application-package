@@ -12,24 +12,41 @@ reuses the same server logic.
 
 | File | Purpose |
 |---|---|
-| `Start_Here/Start_Wizard.bat` | Launches the six-step wizard on localhost port 7788 |
+| `Start_Here/Start_Wizard.bat` | Launches the six-step wizard on Windows, normally on localhost port 7788 |
+| `Start_Here/Start_Wizard.command` | Launches the six-step wizard on macOS or Linux |
 | `app_wizard.R` | Wizard front end |
-| `Start_Here/Start_Dashboard.bat` | Launches the classic dashboard on localhost port 7777 |
+| `Start_Here/Start_Dashboard.bat` | Launches the classic dashboard on Windows, normally on localhost port 7777 |
+| `Start_Here/Start_Dashboard.command` | Launches the classic dashboard on macOS or Linux |
 | `app.R` | 5.2.0-rc.6 classic dashboard and shared server |
 
 Both dashboards may run at the same time because they use different ports.
 
 ## Run the wizard
 
-R 4.2.0 or later is required. On Windows, double-click:
+R 4.2.0 or later is required. Use the newest version that your organization has
+approved and made available; the absolute latest R release is not required. On
+a managed computer, keep the approved R 4.2+ installation unless IT directs an
+upgrade.
+
+Report creation also needs Pandoc. Before the first run, install **one** free
+option: [RStudio Desktop](https://posit.co/download/rstudio-desktop/),
+[Quarto](https://quarto.org/docs/get-started/), or [standalone
+Pandoc](https://pandoc.org/installing.html). You do not need all three.
+
+On Windows, double-click:
 
 ```bat
 Start_Here/Start_Wizard.bat
 ```
 
+On macOS, double-click `Start_Here/Start_Wizard.command`. The first launch may
+require Control-clicking the file and choosing **Open**. On Linux, run
+`bash Start_Here/Start_Wizard.command`. See `Start_Here/README.md` for macOS
+Gatekeeper and executable-permission help.
+
 The launcher opens `http://127.0.0.1:7788` and tries successive ports if 7788
-is occupied. Keep the launcher window open while using the dashboard. In
-RStudio, open `app_wizard.R` and select **Run App**.
+is occupied. Keep the launcher window open while using the dashboard. As an
+alternative, open `app_wizard.R` in RStudio and select **Run App**.
 
 Two example datasets are included, both for learning and testing only.
 `Data/simulated/` holds fully synthetic files built by an included seeded script.
@@ -160,9 +177,11 @@ replace current outputs; archived copies are retained under
 `app_runs/<timestamp>_<run_label>/outputs/`. Keep `outputs/data/` with the reports
 for Excel links. The clean distribution contains no generated reports.
 
-Both formats require Pandoc. Word formatting also requires `xml2` and `zip`,
-installed by `install_packages.R`. If Word is missing, inspect the run log,
-resolve the conversion warning, and regenerate; the completed HTML is retained.
+Both formats require Pandoc, supplied by any one of RStudio Desktop, Quarto, or
+a standalone Pandoc installation. Word formatting also requires `xml2` and
+`zip`, installed by `install_packages.R`. If Word is missing, inspect the run
+log, resolve the conversion warning, and regenerate; the completed HTML is
+retained.
 The new figures are in `outputs/figures/change_comparisons/`, with values in
 `outputs/data/change_estimate_comparison.xlsx` and `EU_SAE_results.xlsx`.
 They compare signed estimated changes, not CI widths. A tighter distribution
