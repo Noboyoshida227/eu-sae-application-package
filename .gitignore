@@ -85,3 +85,6 @@ release_candidate_*/
 **/outputs/figures/*
 !**/outputs/**/.gitkeep
 **/app_runs/
+
+# Internal review material lives in OneDrive, never in this public repository.
+docs/internal/
